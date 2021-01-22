@@ -97,6 +97,11 @@ export const App = () => {
     return () => sub.unsubscribe();
   }, [state, timeState.s, timeState.m, timeState.h]);
 
+  // Я понимаю, что функционал так себе, но мне просто не удалось за один день понять как использовать RXJs для  этого таймера.
+
+  /* Также для практики писал приложение по поиску профилей в гитхабе https://github.com/arthurseredaa/rxjs-github-search
+   смотря видео Владилена Минина (Узнал о функционале новых операторов). */
+
   return (
     <div className="App">
       Timer app
