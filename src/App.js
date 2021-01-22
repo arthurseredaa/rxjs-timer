@@ -1,9 +1,10 @@
-import { ButtonGroup, Button, makeStyles, Card } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core";
 import { useState, useEffect } from "react";
 import "./App.css";
 import { Observable } from "rxjs";
-import { checkNum } from "./helpers/checkNum";
-import ReactTooltip from "react-tooltip";
+import { Timer } from "./Components/Timer";
+import { Laps } from "./Components/Laps";
+import { ControlButtons } from "./Components/ControlButtons";
 
 const useStyles = makeStyles(() => ({
   wait: {
@@ -28,7 +29,7 @@ const useStyles = makeStyles(() => ({
       fontWeight: "700",
     },
   },
-  lap: {
+  lapBtn: {
     marginRight: "20px",
   },
   time: {
@@ -38,15 +39,17 @@ const useStyles = makeStyles(() => ({
 
 export const App = () => {
   const classes = useStyles();
-
+  // Стейт для интервалов (кругов к примеру).
   const [laps, setLaps] = useState([]);
 
+  // Стейт со значениями времени, которые отображаются на странице.
   const [timeState, setTimeState] = useState({
     s: 0,
     m: 0,
     h: 0,
   });
 
+  // Стейт для кнопок управления
   const [state, setState] = useState({
     start: false,
     stop: false,
@@ -55,6 +58,7 @@ export const App = () => {
   });
 
   useEffect(() => {
+    // Создаем стрим
     const stream$ = new Observable((observer) => {
       let s = timeState.s,
         m = timeState.m,
@@ -63,6 +67,7 @@ export const App = () => {
       if (state.start && !state.reset) {
         const interval = setInterval(() => {
           if (state.wait) clearInterval(interval);
+
           if (s === 59) {
             if (m === 59) {
               h++;
@@ -83,72 +88,32 @@ export const App = () => {
       }
     });
 
+    // Подписку на стрим заносим в переменную, чтобы ниже отписаться от него когда компонент размонтируется.
     const sub = stream$.subscribe({
       next: (fullTime) => setTimeState((prev) => ({ ...prev, ...fullTime })),
     });
 
+    // Отписываемся
     return () => sub.unsubscribe();
   }, [state, timeState.s, timeState.m, timeState.h]);
 
   return (
     <div className="App">
       Timer app
-      <h1 className={classes.time}>
-        {checkNum(timeState.h)}:{checkNum(timeState.m)}:{checkNum(timeState.s)}
-      </h1>
-      <Card variant="outlined" className={classes.lapsCard}>
-        {laps &&
-          laps.map((item) => {
-            const { h, m, s } = item;
-
-            return <p key={`_${s}-${h}-${m}`}>{`${checkNum(h)}:${checkNum(m)}:${checkNum(s)}`}</p>;
-          })}
-      </Card>
-      <div>
-        <Button
-          className={classes.lap}
-          variant="outlined"
-          color="primary"
-          onClick={() =>
-            setLaps((prev) => [
-              ...prev,
-              { s: timeState.s, m: timeState.m, h: timeState.h },
-            ])
-          }
-        >
-          Lap
-        </Button>
-        <ButtonGroup>
-          <Button
-            className={state.start ? classes.stop : classes.start}
-            onClick={() => {
-              if (state.start) {
-                setState({ ...state, stop: true, start: false });
-              } else {
-                setState({ ...state, start: true, stop: false });
-              }
-            }}
-          >
-            {!state.start || state.wait ? "Start" : "Stop"}
-          </Button>
-          <Button
-            data-tip="Кликните два раза, чтобы приостановить таймер"
-            className={classes.wait}
-            onDoubleClick={() => {
-              setState({ ...state, start: !state.start });
-            }}
-          >
-            Wait
-          </Button>
-          <ReactTooltip place="top" type="dark" effect="float" />
-          <Button
-            className={classes.reset}
-            onClick={() => setState({ ...state, reset: true })}
-          >
-            Reset
-          </Button>
-        </ButtonGroup>
-      </div>
+      <Timer
+        s={timeState.s}
+        m={timeState.m}
+        h={timeState.h}
+        componentClass={classes.time}
+      />
+      <Laps componentClass={classes.lapsCard} laps={laps} />
+      <ControlButtons
+        state={state}
+        setState={setState}
+        classes={classes}
+        timeState={timeState}
+        setLaps={setLaps}
+      />
     </div>
   );
 };
